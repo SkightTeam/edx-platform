@@ -105,7 +105,7 @@ class UserMessageCollection():
         return body_html
 
     @classmethod
-    def register_user_message(self, request, message_type, body_html, **kwargs):
+    def register_user_message(self, request, message_type, body_html, once_only=False, **kwargs):
         """
         Register a message to be shown to the user in the next page.
 
@@ -114,10 +114,12 @@ class UserMessageCollection():
             body_html (str): body of the message in html format
             title (str): optional title for the message as plain text
             dismissable (bool): shows a dismiss button (defaults to no button)
+            once_only (bool): show the message only once per request
         """
         assert isinstance(message_type, UserMessageType)
         message = Text(self.get_message_html(body_html, **kwargs))
-        messages.add_message(request, message_type.value, Text(message), extra_tags=self.get_namespace())
+        if not once_only or message not in [m.message for m in messages.get_messages(request)]:
+            messages.add_message(request, message_type.value, Text(message), extra_tags=self.get_namespace())
 
     @classmethod
     def register_info_message(self, request, message, **kwargs):
@@ -184,7 +186,7 @@ class PageLevelMessages(UserMessageCollection):
     NAMESPACE = 'page_level_messages'
 
     @classmethod
-    def get_message_html(self, body_html, title=None, dismissable=False):
+    def get_message_html(self, body_html, title=None, dismissable=False, **kwargs):
         """
         Returns the entire HTML snippet for the message.
         """
